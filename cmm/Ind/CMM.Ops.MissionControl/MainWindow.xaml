@@ -1,0 +1,213 @@
+<Window x:Class="CMM.Ops.MissionControl.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:CMM.Ops.MissionControl"
+        Title="CMM Ops: Mission Control" Width="1200" Height="760"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel LastChildFill="True" Background="#0F1115">
+        <Border DockPanel.Dock="Top" Background="#151822" Padding="8">
+            <DockPanel>
+                <TextBlock Text="CMM Ops: Mission Control" Foreground="#E8EAF2" FontSize="18" FontWeight="SemiBold" DockPanel.Dock="Left" Margin="0,0,16,0"/>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                    <Button Content="New Mission" Command="{Binding NewMissionCommand}"/>
+                    <Button Content="Plan Route" Command="{Binding PlanRouteCommand}"/>
+                    <Button Content="Run Monte-Carlo" Command="{Binding MonteCarloPlanCommand}"/>
+                    <Button Content="Start Sim" Command="{Binding StartSimCommand}"/>
+                    <Button Content="Stop" Command="{Binding StopSimCommand}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                    <CheckBox Content="Edit map" IsChecked="{Binding IsEditMode}" Foreground="#E8EAF2" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                    <TextBlock Text="{Binding StatusText}" Foreground="#9AA3B2" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <TabControl Background="#0F1115" BorderBrush="#222838" Foreground="#E8EAF2" SelectedIndex="{Binding SelectedTabIndex}">
+            <TabItem Header="Mission">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Background="#0B0D12" BorderBrush="#222838" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,10,0">
+                        <local:MapView Map="{Binding Map}"
+                                       Path="{Binding CurrentPath}"
+                                       DronePosition="{Binding Drone.Position}"
+                                       Targets="{Binding Mission.Targets}"
+                                       IsEditMode="{Binding IsEditMode}"
+                                       CellSize="0"
+                                       OnLog="{Binding LogFromMapCommand}"/>
+                    </Border>
+
+                    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <GroupBox Header="Drone (Digital Twin)" Foreground="#E8EAF2" BorderBrush="#222838">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding DroneSummary}" Foreground="#E8EAF2"/>
+                                    <TextBlock Text="Battery"/>
+                                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Drone.BatteryPct}"/>
+                                    <TextBlock Text="Health"/>
+                                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Drone.HealthPct}"/>
+                                    <TextBlock Text="Payload"/>
+                                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding Drone.PayloadPct}"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="Simulation Tuning" Foreground="#E8EAF2" BorderBrush="#222838">
+                                <StackPanel>
+                                    <TextBlock Text="Move speed (cells/sec)"/>
+                                    <Slider Minimum="0.5" Maximum="8" Value="{Binding Drone.SpeedCellsPerSecond}"/>
+
+                                    <DockPanel Margin="0,6,0,0">
+                                        <TextBlock Text="Start health" DockPanel.Dock="Left"/>
+                                        <TextBlock Text="{Binding Tuning.StartHealthPct, StringFormat={}{0:0}%}" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <Slider Minimum="20" Maximum="100" Value="{Binding Tuning.StartHealthPct}"/>
+
+                                    <DockPanel Margin="0,6,0,0">
+                                        <TextBlock Text="Start battery" DockPanel.Dock="Left"/>
+                                        <TextBlock Text="{Binding Tuning.StartBatteryPct, StringFormat={}{0:0}%}" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <Slider Minimum="20" Maximum="100" Value="{Binding Tuning.StartBatteryPct}"/>
+
+                                    <DockPanel Margin="0,6,0,0">
+                                        <TextBlock Text="Risk multiplier" DockPanel.Dock="Left"/>
+                                        <TextBlock Text="{Binding Tuning.RiskMultiplier, StringFormat={}{0:0.00}}" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <Slider Minimum="0.5" Maximum="2.5" Value="{Binding Tuning.RiskMultiplier}"/>
+
+                                    <DockPanel Margin="0,6,0,0">
+                                        <TextBlock Text="Incident chance @ risk=1" DockPanel.Dock="Left"/>
+                                        <TextBlock Text="{Binding Tuning.RiskIncidentFactor, StringFormat={}{0:0.00}}" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <Slider Minimum="0" Maximum="0.8" Value="{Binding Tuning.RiskIncidentFactor}"/>
+
+                                    <DockPanel Margin="0,6,0,0">
+                                        <TextBlock Text="Damage multiplier" DockPanel.Dock="Left"/>
+                                        <TextBlock Text="{Binding Tuning.DamageMultiplier, StringFormat={}{0:0.00}}" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <Slider Minimum="0.5" Maximum="3" Value="{Binding Tuning.DamageMultiplier}"/>
+
+                                    <DockPanel Margin="0,6,0,0">
+                                        <TextBlock Text="Dynamic obstacle chance" DockPanel.Dock="Left"/>
+                                        <TextBlock Text="{Binding Tuning.DynamicObstacleChance, StringFormat={}{0:0.000}}" DockPanel.Dock="Right"/>
+                                    </DockPanel>
+                                    <Slider Minimum="0" Maximum="0.08" Value="{Binding Tuning.DynamicObstacleChance}"/>
+
+                                    <Button Content="Apply start stats to drone" Command="{Binding ApplyTuningCommand}" Margin="0,6,0,0"/>
+                                    <TextBlock Foreground="#9AA3B2" TextWrapping="Wrap" Margin="0,6,0,0"
+                                               Text="Tip: Increase risk multiplier and incident chance to make red zones lethal. Speed also increases incident probability."/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="Inventory (Logistics)" Foreground="#E8EAF2" BorderBrush="#222838">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding InventorySummary}" Foreground="#E8EAF2"/>
+                                    <TextBlock Text="Food"/>
+                                    <ProgressBar Minimum="0" Maximum="{Binding Inventory.MaxFood}" Value="{Binding Inventory.Food}"/>
+                                    <TextBlock Text="Parts"/>
+                                    <ProgressBar Minimum="0" Maximum="{Binding Inventory.MaxParts}" Value="{Binding Inventory.Parts}"/>
+                                    <TextBlock Text="Ammo"/>
+                                    <ProgressBar Minimum="0" Maximum="{Binding Inventory.MaxAmmo}" Value="{Binding Inventory.Ammo}"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="Crew (Staffing)" Foreground="#E8EAF2" BorderBrush="#222838">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding CrewSummary}" Foreground="#E8EAF2" Margin="0,0,0,8"/>
+                                    <Button Content="Open Crew Panel" Command="{Binding OpenCrewTabCommand}"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="Mission" Foreground="#E8EAF2" BorderBrush="#222838">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding MissionSummary}" Foreground="#E8EAF2" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="Log" Foreground="#E8EAF2" BorderBrush="#222838">
+                                <ListBox ItemsSource="{Binding Logs}" Background="#0B0D12" BorderBrush="#222838" Foreground="#E8EAF2" Height="240"/>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Petri Net">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="2*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Background="#0B0D12" BorderBrush="#222838" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,10,0">
+                        <local:PetriNetView Net="{Binding PetriNet}" TokenScale="1.0"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1">
+                        <GroupBox Header="Controls" Foreground="#E8EAF2" BorderBrush="#222838">
+                            <StackPanel>
+                                <Button Content="Reset Petri Net" Command="{Binding ResetPetriCommand}"/>
+                                <Button Content="Step" Command="{Binding StepPetriCommand}"/>
+                                <TextBlock Text="{Binding PetriSummary}" Foreground="#E8EAF2" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Meaning" Foreground="#E8EAF2" BorderBrush="#222838">
+                            <TextBlock TextWrapping="Wrap" Foreground="#9AA3B2"
+                                       Text="Tokens represent current mission state. Transitions fire when conditions are met (planned route, started flight, delivered cargo, returned, or failure)."/>
+                        </GroupBox>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Crew">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <GroupBox Header="Available Staff" Foreground="#E8EAF2" BorderBrush="#222838">
+                        <DataGrid ItemsSource="{Binding Crew.People}" AutoGenerateColumns="False" Background="#0B0D12"
+                                  BorderBrush="#222838" Foreground="#E8EAF2" HeadersVisibility="Column" GridLinesVisibility="None"
+                                  CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                                <DataGridTextColumn Header="Pilot" Binding="{Binding PilotSkill}" Width="Auto"/>
+                                <DataGridTextColumn Header="Engineer" Binding="{Binding EngineerSkill}" Width="Auto"/>
+                                <DataGridTextColumn Header="Logistics" Binding="{Binding LogisticsSkill}" Width="Auto"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </GroupBox>
+
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                        <GroupBox Header="Assignments" Foreground="#E8EAF2" BorderBrush="#222838">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Pilot:" Width="80" VerticalAlignment="Center"/>
+                                    <ComboBox ItemsSource="{Binding Crew.People}" SelectedItem="{Binding Crew.AssignedPilot}" DisplayMemberPath="Name" Width="220"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Engineer:" Width="80" VerticalAlignment="Center"/>
+                                    <ComboBox ItemsSource="{Binding Crew.People}" SelectedItem="{Binding Crew.AssignedEngineer}" DisplayMemberPath="Name" Width="220"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Logistics:" Width="80" VerticalAlignment="Center"/>
+                                    <ComboBox ItemsSource="{Binding Crew.People}" SelectedItem="{Binding Crew.AssignedLogistician}" DisplayMemberPath="Name" Width="220"/>
+                                </StackPanel>
+
+                                <Button Content="Apply Crew Effects" Command="{Binding ApplyCrewCommand}" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="Effects" Foreground="#E8EAF2" BorderBrush="#222838">
+                            <TextBlock Text="{Binding CrewEffectsSummary}" Foreground="#E8EAF2" TextWrapping="Wrap"/>
+                        </GroupBox>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
